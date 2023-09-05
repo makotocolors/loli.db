@@ -1,41 +1,42 @@
 # loliness-db
-A simple and fast local JSON database!
+***A simple and fast local JSON database!***
 
-# Basic setup
-Importing the database for use.
+## Basic setup
+In this way, it is possible to import the file to use the functions:
 ```js
 const Database = require('./database.js');
 const db = new Database;
 ```
 
-You can also define a location where the database will be stored.
+It is also possible to define the location where the database will be saved:
 ```js
-const Database = require('./database.js');
 const db = new Database('./path/database.json');
 ```
 
-# Basic usage
-- Using "`db.set()`" and "`db.get()`" functions to **set** keys and values and **get** values by key respectively.
+## Basic usage
+### `db.set('key', 'value')`
+`db.set()` is a function used to set a key and a value in the database. 
 ```js
 db.set('user', 'makoto');
-
-const user = db.get('user');
-console.log(user);
-
-//expected response "makoto".
 ```
-
-- Creating **subkeys**. The default separator is "`.`".
+It is also possible to define specific positions in the database using the separator. The default separator is "`.`".
 ```js
 db.set('user.id', 001);
-
-const id = db.get('user.id');
-console.log(id);
-
-//expected response "001". 
 ```
 
-# Advanced usage
+### `db.get('key')`
+`db.get()` is a function used to get a value from a key in the database.
+```js
+db.get('user');
+//Use console.log to view the value.
+```
+It is also possible to define specific positions in the database using the separator.
+```js
+db.get('user.id');
+//Use console.log to view the value.
+```
+
+## Advanced usage
 - You can use the "`db.getAll()`" function to get the entire database.
 ```js
 db.set('user.name', 'makoto');
@@ -92,7 +93,7 @@ console.log(data);
 */
 ```
 
-# Math functions
+## Math functions
 
 - You can **add** using "`db.add`".
 ```js
