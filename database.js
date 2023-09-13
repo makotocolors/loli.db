@@ -145,7 +145,7 @@ class Database {
     return this.get(path);
   }
   
-  mult(path, amount) {
+  multi(path, amount) {
     if (!path) {
       throw new Error('Specify a key.');
     } else if (typeof path !== 'string') {
