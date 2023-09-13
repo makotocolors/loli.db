@@ -1,7 +1,11 @@
 const fs = require('fs');
 
 class Database {
-  constructor(path = './database.json') {
+  constructor(path = './database.json', options = { method: 'JSON', usage: 'classic', separator: '.' }) {
+    if (process.getuid && process.getuid() === 0) {
+      throw new Error('Running as root is not allowed.');
+    }
+
     this.path = path;
     this.#loadDatabase();
   }
@@ -26,15 +30,22 @@ class Database {
       this.#saveDatabase().then(() => {
         console.log('A new database was generated at:', this.path);
       }).catch((error) => {
-        console.error('An error occurred while generating the database!:', error.message);
+        console.error('An error occurred while generating the database:', error.message);
       });
     }
   }
 
   set(path, value) {
-    if (!path) return console.log('Specify a key.');
-    if (!value) return console.log('Specify a value.');
+    if (!path) {
+      throw new Error('Specify a key.');
+    } else if (typeof path !== 'string') {
+      throw new Error('The key must be a string.');
+    }
     
+    if (!value) {
+      throw new Error('Specify a value.');
+    }
+
     const keys = path.split('.');
     let current = this.database;
     for (let i = 0; i < keys.length - 1; i++) {
@@ -45,18 +56,24 @@ class Database {
     }
     current[keys[keys.length - 1]] = value;
     this.#saveDatabase();
-    return 'Saved to the database successfully!';
+    
+    return this.get(path);
   }
 
   get(path) {
-    if (!path) return console.log('Specify a key.');
+    if (!path) {
+      throw new Error('Specify a key.');
+    } else if (typeof path !== 'string') {
+      throw new Error('The key must be a string.');
+    }
     
     const keys = path.split('.');
     let current = this.database;
     for (const key of keys) {
-      if (!current[key]) return undefined;
+      if (current[key] === undefined) return undefined;
       current = current[key];
     }
+    
     return current;
   }
 
@@ -65,8 +82,12 @@ class Database {
   }
 
   del(path) {
-    if (!path) return console.log('Specify a key.');
-    
+    if (!path) {
+      throw new Error('Specify a key.');
+    } else if (typeof path !== 'string') {
+      throw new Error('The key must be a string.');
+    }
+
     const keys = path.split('.');
     let current = this.database;
     for (let i = 0; i < keys.length - 1; i++) {
@@ -75,45 +96,89 @@ class Database {
     }
     delete current[keys[keys.length - 1]];
     this.#saveDatabase();
-    return 'Deleted from the database successfully!'
+    
+    return 'Successfully deleted from the database!';
   }
 
   delAll() {
     this.database = {};
     this.#saveDatabase();
-    return 'Database cleaned successfully!'
+    
+    return 'Database was successfully cleaned!';
   }
   
   add(path, amount) {
-    if (typeof path !== 'string') return;
-    if (typeof amount !== 'number') return;
+    if (!path) {
+      throw new Error('Specify a key.');
+    } else if (typeof path !== 'string') {
+      throw new Error('The key must be a string.');
+    }
     
-    const value = this.get(path);
-    this.set(path, value + (amount || 0));
+    if (!amount) {
+      throw new Error('Specify a value.');
+    } else if (typeof amount !== 'number') {
+      throw new Error('The value must be a number.');
+    }
+    
+    const value = this.get(path)||0;
+    this.set(path, value + amount);
+
+    return this.get(path);
   }
   
   sub(path, amount) {
-    if (typeof path !== 'string') return;
-    if (typeof amount !== 'number') return;
+    if (!path) {
+      throw new Error('Specify a key.');
+    } else if (typeof path !== 'string') {
+      throw new Error('The key must be a string.');
+    }
     
-    const value = this.get(path);
-    this.set(path, value - (amount || 0));
+    if (!amount) {
+      throw new Error('Specify a value.');
+    } else if (typeof amount !== 'number') {
+      throw new Error('The value must be a number.');
+    }
+    
+    const value = this.get(path)||0;
+    this.set(path, value - amount);
+
+    return this.get(path);
   }
   
   mult(path, amount) {
-    if (typeof path !== 'string') return;
-    if (typeof amount !== 'number') return;
+    if (!path) {
+      throw new Error('Specify a key.');
+    } else if (typeof path !== 'string') {
+      throw new Error('The key must be a string.');
+    }
+    if (!amount) {
+      throw new Error('Specify a value.');
+    } else if (typeof amount !== 'number') {
+      throw new Error('The value must be a number.');
+    }
     
-    const value = this.get(path);
-    this.set(path, value * (amount || 1));
+    const value = this.get(path)||1;
+    this.set(path, value * amount);
+
+    return this.get(path);
   }
   
   div(path, amount) {
-    if (typeof path !== 'string') return;
-    if (typeof amount !== 'number') return;
+    if (!path) {
+      throw new Error('Specify a key.');
+    } else if (typeof path !== 'string') {
+      throw new Error('The key must be a string.');
+    }
+    if (!amount) {
+      throw new Error('Specify a value.');
+    } else if (typeof amount !== 'number') {
+      throw new Error('The value must be a number.');
+    }
     
-    const value = this.get(path);
-    this.set(path, value / (amount || 1));
+    const value = this.get(path)||1;
+    this.set(path, value / amount);
+
+    return this.get(path);
   }
 }
 
