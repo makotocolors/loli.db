@@ -12,8 +12,9 @@ This module was inspired by other modules like [simple-json-db](https://github.c
 ### Plans for the future:
 - [ ] Possibility to set and get entire strings in the database. 
 - [ ] Possibility to define a separator.
-- [ ] Possibility to define a default value for a key. **db.def()** function will be created for this.
-- [ ]  Possibility of **db.set()** not overwriting a value that is already saved in the database. **db.rep()** function will be created for this. 
+- [ ] Possibility to define a default value for a key. **db.def()** function will be created for this. **More informations soon.**
+- [ ] Possibility to switch the database organization mode between JSON and SQL. 
+- [ ] Possibility to change between `classic` and `dynamic` usage mode. **More Informations soon.**
 
 ## Basic setup:
 In this way, it is possible to import the file to use the functions:
@@ -32,10 +33,12 @@ const db = new Database('./path/database.json');
 **db.set()** is a function used to set a key and a value in the database. 
 ```js
 db.set('user', 'makoto');
+// You can also use console.log() to view the response.
 ```
 It is also possible to define specific positions in the database using the separator. The default separator is "`.`".
 ```js
 db.set('user.id', 001);
+// You can also use console.log() to view the response.
 ```
 
 ### `db.get('key')`
@@ -70,7 +73,7 @@ db.set('user.age', 18);
 db.set('user.sex', 'male');
 
 db.del('user.age');
-//Use db.get() or db.getAll() together with console.log() to view the response. 
+// Use db.get() or db.getAll() together with console.log() to view the response.
 ```
 
 ### `db.delAll()`
@@ -81,51 +84,45 @@ db.set('user.age', 18);
 db.set('user.sex', 'male');
 
 db.delAll();
-//Use db.get() or db.getAll() together with console.log() to view the response. 
+// Use db.get() or db.getAll() together with console.log() to view the response. 
 ```
 
 ## Math functions
-
-- You can **add** using "`db.add`".
+### `db.add('key', value)`
+**db.add()** is a function used to get a value from a key in the database, perform the mathematical addition operation with this value and the numeric value you specify, and finally set the result in the database by overwriting the old value.
 ```js
 db.set('default', 100);
+
 db.add('default', 10);
-
-const value = db.get('default');
-console.log(value);
-
-//expected response "110".
+// Use db.get() or db.getAll() together with console.log() to view the response. 
 ```
 
-- You can **sub** using "`db.sub`".
+### `db.sub('key', value)`
+**db.sub()** is a function used to get a value from a key in the database, perform the mathematical subtraction operation with this value and the numeric value you specify, and finally set the result in the database by overwriting the old value.
 ```js
 db.set('default', 100);
+
 db.sub('default', 10);
-
-const value = db.get('default');
-console.log(value);
-
-//expected response "90".
+// Use db.get() or db.getAll() together with console.log() to view the response. 
 ```
 
-- You can **multiply** using "`db.mult`".
+
+### `db.multi('key', value)`
+**db.multi()** is a function used to get a value from a key in the database, perform the mathematical multiplication operation with this value and the numeric value you specify, and finally set the result in the database by overwriting the old value.
 ```js
 db.set('default', 100);
-db.mult('default', 2);
 
-const value = db.get('default');
-console.log(value);
-
-//expected response "200".
+db.multi('default', 2);
+// Use db.get() or db.getAll() together with console.log() to view the response. 
 ```
 
-- You can **divide** using "`db.div`".
+### `db.div('key', value)`
+**db.div()** is a function used to get a value from a key in the database, perform the mathematical division. operation with this value and the numeric value you specify, and finally set the result in the database by overwriting the old value.
 ```js
 db.set('default', 100);
+
 db.div('default', 2);
-
-const value = db.get('default');
-console.log(value);
-
-//expected response "50".
+// Use db.get() or db.getAll() together with console.log() to view the response. 
 ```
+#
+> **Made with ❤️ by *Makoto Colors***!
