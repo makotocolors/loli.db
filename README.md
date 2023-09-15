@@ -1,4 +1,4 @@
-# loliness-database
+# loli.db
 ***A simple and fast local database!***
 
 ### Introduction:
@@ -14,7 +14,7 @@ This module was inspired by other modules like [simple-json-db](https://github.c
 - [ ] Possibility to define a separator.
 - [ ] Possibility to define a default value for a key. **db.def()** function will be created for this. **More informations soon.**
 - [ ] Possibility to switch the database organization mode between JSON and SQL. 
-- [ ] Possibility to change between `classic` and `dynamic` usage mode. **More Informations soon.**
+- [ ] Possibility to change between `classic` and `modern` usage mode. **More Informations soon.**
 
 ## Basic setup:
 In this way, it is possible to import the file to use the functions:
@@ -125,4 +125,4 @@ db.div('default', 2);
 // Use db.get() or db.getAll() together with console.log() to view the response. 
 ```
 #
-> **Made with ❤️ by *Makoto Colors***!
+> **Made with ❤️ by *Makoto Colors!***
