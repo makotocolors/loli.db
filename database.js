@@ -1,15 +1,52 @@
-const fs = require('fs');
+const fs = require('node:fs');
+
+const settings = {
+  path: './',       // Can also be any.
+  method: 'JSON',   // Can also be 'SQL'.
+  usage: 'classic', // Can also be 'modern'.
+  separator: '.'    // Can also be any.
+};
 
 class Database {
-  constructor(path = './database.json', options = { method: 'JSON', usage: 'classic', separator: '.' }) {
+  constructor(options = {}) {
     if (process.getuid && process.getuid() === 0) {
-      throw new Error('Running as root is not allowed.');
+      throw new Error(this.#text('blockedAccess'));
     }
 
-    this.path = path;
+    this.options = {
+      ...settings,
+      ...options,
+    };
+    
+    this.path = `${this.options.path}/database.${this.options.method.toLowerCase()}`.replaceAll('//', '/');
     this.#loadDatabase();
   }
 
+  #text(id, additional) {
+    switch (id) {
+      case 'blockedAccess': return 'Running as a root is not allowed.';
+        break;
+      case 'newDatabase': return 'A new database was generated at: \x1b[32m' + additional + '\x1b[0m.';
+        break;
+      case 'generatingError': return 'An error occurred while generating the database: \x1b[31m' + additional + '\x1b[0m.';
+        break;
+      case 'missingKey': return 'Specify a key.';
+        break;
+      case 'stringError': return 'The key must be a string.';
+        break;
+      case 'missingValue': return 'Specify a value.';
+        break;
+      case 'numberError': return 'The value must be a number.';
+        break;
+      case 'successfullyDeleted': return 'Successfully deleted from the database!';
+        break;
+      case 'successfullyCleaned': return 'Database was successfully cleaned!';
+        break;
+      default: return 'Something wrong has occurred.';
+        break;
+    }
+  }
+  
   #saveDatabase() {
     return new Promise((resolve, reject) => {
       try {
@@ -28,22 +65,22 @@ class Database {
     } catch (error) {
       this.database = {};
       this.#saveDatabase().then(() => {
-        console.log('A new database was generated at:', this.path);
+        console.log(this.#text('newDatabase', this.path));
       }).catch((error) => {
-        console.error('An error occurred while generating the database:', error.message);
+        console.error(this.#text('generatingError', error.message));
       });
     }
   }
 
   set(path, value) {
     if (!path) {
-      throw new Error('Specify a key.');
+      throw new Error(this.#text('missingKey'));
     } else if (typeof path !== 'string') {
-      throw new Error('The key must be a string.');
+      throw new Error(this.#text('stringError'));
     }
     
     if (!value) {
-      throw new Error('Specify a value.');
+      throw new Error(this.#text('missingValue'));
     }
 
     const keys = path.split('.');
@@ -62,9 +99,9 @@ class Database {
 
   get(path) {
     if (!path) {
-      throw new Error('Specify a key.');
+      throw new Error(this.#text('missingKey'));
     } else if (typeof path !== 'string') {
-      throw new Error('The key must be a string.');
+      throw new Error(this.#text('stringError'));
     }
     
     const keys = path.split('.');
@@ -83,9 +120,9 @@ class Database {
 
   del(path) {
     if (!path) {
-      throw new Error('Specify a key.');
+      throw new Error(this.#text('missingKey'));
     } else if (typeof path !== 'string') {
-      throw new Error('The key must be a string.');
+      throw new Error(this.#text('stringError'));
     }
 
     const keys = path.split('.');
@@ -97,27 +134,27 @@ class Database {
     delete current[keys[keys.length - 1]];
     this.#saveDatabase();
     
-    return 'Successfully deleted from the database!';
+    return this.#text('successfullyDeleted');
   }
 
   delAll() {
     this.database = {};
     this.#saveDatabase();
     
-    return 'Database was successfully cleaned!';
+    return this.#text('successfullyCleaned');
   }
   
   add(path, amount) {
     if (!path) {
-      throw new Error('Specify a key.');
+      throw new Error(this.#text('missingKey'));
     } else if (typeof path !== 'string') {
-      throw new Error('The key must be a string.');
+      throw new Error(this.#text('stringError'));
     }
     
     if (!amount) {
-      throw new Error('Specify a value.');
+      throw new Error(this.#text('missingValue'));
     } else if (typeof amount !== 'number') {
-      throw new Error('The value must be a number.');
+      throw new Error(this.#text('numberError'));
     }
     
     const value = this.get(path)||0;
@@ -128,15 +165,15 @@ class Database {
   
   sub(path, amount) {
     if (!path) {
-      throw new Error('Specify a key.');
+      throw new Error(this.#text('missingKey'));
     } else if (typeof path !== 'string') {
-      throw new Error('The key must be a string.');
+      throw new Error(this.#text('stringError'));
     }
     
     if (!amount) {
-      throw new Error('Specify a value.');
+      throw new Error(this.#text('missingValue'));
     } else if (typeof amount !== 'number') {
-      throw new Error('The value must be a number.');
+      throw new Error(this.#text('numberError'));
     }
     
     const value = this.get(path)||0;
@@ -147,14 +184,14 @@ class Database {
   
   multi(path, amount) {
     if (!path) {
-      throw new Error('Specify a key.');
+      throw new Error(this.#text('missingKey'));
     } else if (typeof path !== 'string') {
-      throw new Error('The key must be a string.');
+      throw new Error(this.#text('stringError'));
     }
     if (!amount) {
-      throw new Error('Specify a value.');
+      throw new Error(this.#text('missingValue'));
     } else if (typeof amount !== 'number') {
-      throw new Error('The value must be a number.');
+      throw new Error(this.#text('numberError'));
     }
     
     const value = this.get(path)||1;
@@ -165,14 +202,14 @@ class Database {
   
   div(path, amount) {
     if (!path) {
-      throw new Error('Specify a key.');
+      throw new Error(this.#text('missingKey'));
     } else if (typeof path !== 'string') {
-      throw new Error('The key must be a string.');
+      throw new Error(this.#text('stringError'));
     }
     if (!amount) {
-      throw new Error('Specify a value.');
+      throw new Error(this.#text('missingValue'));
     } else if (typeof amount !== 'number') {
-      throw new Error('The value must be a number.');
+      throw new Error(this.#text('numberError'));
     }
     
     const value = this.get(path)||1;
