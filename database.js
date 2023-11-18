@@ -1,222 +1,107 @@
-const fs = require('node:fs');
+const fs = require('fs');
+const text = require('./databaseFunctions/allTexts.js');
 
 const settings = {
-  path: './',       // Can also be any.
-  method: 'JSON',   // Can also be 'SQL'.
-  usage: 'classic', // Can also be 'modern'.
-  separator: '.'    // Can also be any.
+  path: './',
+  separator: '.'
 };
 
 class Database {
   constructor(options = {}) {
-    if (process.getuid && process.getuid() === 0) {
-      throw new Error(this.#text('blockedAccess'));
-    }
-
     this.options = {
       ...settings,
       ...options,
     };
-    
-    this.path = `${this.options.path}/database.${this.options.method.toLowerCase()}`.replaceAll('//', '/');
-    this.#loadDatabase();
+    this.path = `${this.options.path}/database.${this.options.method.toLowerCase()}`.replace(/\/+/g, '/');
+    this.#database(this.path);
   }
 
-  #text(id, additional) {
-    switch (id) {
-      case 'blockedAccess': return 'Running as a root is not allowed.';
-        break;
-      case 'newDatabase': return 'A new database was generated at: \x1b[32m' + additional + '\x1b[0m.';
-        break;
-      case 'generatingError': return 'An error occurred while generating the database: \x1b[31m' + additional + '\x1b[0m.';
-        break;
-      case 'missingKey': return 'Specify a key.';
-        break;
-      case 'stringError': return 'The key must be a string.';
-        break;
-      case 'missingValue': return 'Specify a value.';
-        break;
-      case 'numberError': return 'The value must be a number.';
-        break;
-      case 'successfullyDeleted': return 'Successfully deleted from the database!';
-        break;
-      case 'successfullyCleaned': return 'Database was successfully cleaned!';
-        break;
-      default: return 'Something wrong has occurred.';
-        break;
+  #database(path) {
+    try {
+      if (!fs.existsSync(path) || fs.readFileSync(path, 'utf-8').length === 0) {
+        fs.writeFileSync(path, '{}');
+        console.log(text(1));
+      } else {
+        const database = this.database || {};
+        fs.writeFileSync(path, JSON.stringify(database, null, 2));
+      }
+      this.database = JSON.parse(fs.readFileSync(path, 'utf-8'));
+    } catch (error) {
+      throw error;
     }
   }
   
-  #saveDatabase() {
-    return new Promise((resolve, reject) => {
-      try {
-        fs.writeFileSync(this.path, JSON.stringify(this.database, null, 2));
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  #loadDatabase() {
-    try {
-      const data = fs.readFileSync(this.path, 'utf-8');
-      this.database = JSON.parse(data);
-    } catch (error) {
-      this.database = {};
-      this.#saveDatabase().then(() => {
-        console.log(this.#text('newDatabase', this.path));
-      }).catch((error) => {
-        console.error(this.#text('generatingError', error.message));
-      });
-    }
-  }
-
-  set(path, value) {
-    if (!path) {
-      throw new Error(this.#text('missingKey'));
-    } else if (typeof path !== 'string') {
-      throw new Error(this.#text('stringError'));
-    }
-    
-    if (!value) {
-      throw new Error(this.#text('missingValue'));
-    }
-
-    const keys = path.split('.');
+  set(key, value) {
+    const keys = key.split(this.options.separator);
     let current = this.database;
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) {
-        current[keys[i]] = {};
+    for (let k = 0; k < keys.length - 1; k++) {
+      if (!current.hasOwnProperty(keys[k])) {
+        current[keys[k]] = {};
       }
-      current = current[keys[i]];
+      current = current[keys[k]];
     }
     current[keys[keys.length - 1]] = value;
-    this.#saveDatabase();
-    
-    return this.get(path);
-  }
-
-  get(path) {
-    if (!path) {
-      throw new Error(this.#text('missingKey'));
-    } else if (typeof path !== 'string') {
-      throw new Error(this.#text('stringError'));
-    }
-    
-    const keys = path.split('.');
-    let current = this.database;
-    for (const key of keys) {
-      if (current[key] === undefined) return undefined;
-      current = current[key];
-    }
-    
+    this.#database(this.path);
     return current;
-  }
+  };
+  
+  get(key) {    
+    const keys = key.split(this.options.separator);
+    let current = this.database;
+    for (let k of keys) {
+      if (!current.hasOwnProperty(k)) {
+        break; return undefined;
+      }
+      current = current[k];
+    }
+    return current;
+  };
 
   getAll() {
     return JSON.stringify(this.database, null, 2);
-  }
+  };
 
-  del(path) {
-    if (!path) {
-      throw new Error(this.#text('missingKey'));
-    } else if (typeof path !== 'string') {
-      throw new Error(this.#text('stringError'));
-    }
-
-    const keys = path.split('.');
+  del(key) {
+    const keys = key.split(this.options.separator);
     let current = this.database;
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) return;
-      current = current[keys[i]];
+    for (let k = 0; k < keys.length - 1; k++) {
+      if (!current.hasOwnProperty(keys[k])) {
+        break; return undefined;
+      }
+      current = current[keys[k]];
     }
     delete current[keys[keys.length - 1]];
-    this.#saveDatabase();
-    
-    return this.#text('successfullyDeleted');
+    this.#database(this.path);
+    return text(6);
   }
 
   delAll() {
-    this.database = {};
-    this.#saveDatabase();
-    
-    return this.#text('successfullyCleaned');
+    fs.writeFileSync(this.path, '{}'); 
+    return text(7);
   }
   
-  add(path, amount) {
-    if (!path) {
-      throw new Error(this.#text('missingKey'));
-    } else if (typeof path !== 'string') {
-      throw new Error(this.#text('stringError'));
-    }
-    
-    if (!amount) {
-      throw new Error(this.#text('missingValue'));
-    } else if (typeof amount !== 'number') {
-      throw new Error(this.#text('numberError'));
-    }
-    
-    const value = this.get(path)||0;
-    this.set(path, value + amount);
-
+  add(key, value) {
+    const current = this.get(path) || 0;
+    this.set(key, current + value);
     return this.get(path);
   }
   
-  sub(path, amount) {
-    if (!path) {
-      throw new Error(this.#text('missingKey'));
-    } else if (typeof path !== 'string') {
-      throw new Error(this.#text('stringError'));
-    }
-    
-    if (!amount) {
-      throw new Error(this.#text('missingValue'));
-    } else if (typeof amount !== 'number') {
-      throw new Error(this.#text('numberError'));
-    }
-    
-    const value = this.get(path)||0;
-    this.set(path, value - amount);
-
+  sub(key, value) {
+    const current = this.get(path) || 0;
+    this.set(key, current - value);
     return this.get(path);
   }
   
-  multi(path, amount) {
-    if (!path) {
-      throw new Error(this.#text('missingKey'));
-    } else if (typeof path !== 'string') {
-      throw new Error(this.#text('stringError'));
-    }
-    if (!amount) {
-      throw new Error(this.#text('missingValue'));
-    } else if (typeof amount !== 'number') {
-      throw new Error(this.#text('numberError'));
-    }
-    
-    const value = this.get(path)||1;
-    this.set(path, value * amount);
-
+  multi(key, value) {
+    const current = this.get(path) || 1;
+    this.set(key, value * current);
     return this.get(path);
   }
   
-  div(path, amount) {
-    if (!path) {
-      throw new Error(this.#text('missingKey'));
-    } else if (typeof path !== 'string') {
-      throw new Error(this.#text('stringError'));
-    }
-    if (!amount) {
-      throw new Error(this.#text('missingValue'));
-    } else if (typeof amount !== 'number') {
-      throw new Error(this.#text('numberError'));
-    }
-    
-    const value = this.get(path)||1;
-    this.set(path, value / amount);
-
+  div(key, value) {
+    const current = this.get(path) || 1;
+    this.set(key, value + current);
     return this.get(path);
   }
 }
-
 module.exports = Database;
