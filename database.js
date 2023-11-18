@@ -1,6 +1,5 @@
 const fs = require('fs');
 const text = require('./databaseFunctions/allTexts.js');
-
 const settings = {
   path: './',
   separator: '.'
@@ -13,24 +12,27 @@ class Database {
       ...options,
     };
     this.path = `${this.options.path}/database.${this.options.method.toLowerCase()}`.replace(/\/+/g, '/');
-    this.#database(this.path);
-  }
+    this.#load();
+  };
 
-  #database(path) {
+  #load() {
     try {
-      if (!fs.existsSync(path) || fs.readFileSync(path, 'utf-8').length === 0) {
-        fs.writeFileSync(path, '{}');
+      if (!fs.existsSync(this.path) || fs.readFileSync(this.path, 'utf-8').length === 0) {
+        fs.writeFileSync(this.path, '{}');
         console.log(text(1));
       } else {
-        const database = this.database || {};
-        fs.writeFileSync(path, JSON.stringify(database, null, 2));
+        this.database = JSON.parse(fs.readFileSync(this.path, 'utf-8'));
       }
-      this.database = JSON.parse(fs.readFileSync(path, 'utf-8'));
     } catch (error) {
       throw error;
     }
-  }
+  };
   
+  #save() {
+    fs.writeFileSync(this.path, JSON.stringify(this.database, null, 2));
+    this.#load();
+  };
+
   set(key, value) {
     const keys = key.split(this.options.separator);
     let current = this.database;
@@ -41,7 +43,7 @@ class Database {
       current = current[keys[k]];
     }
     current[keys[keys.length - 1]] = value;
-    this.#database(this.path);
+    this.#save();
     return current;
   };
   
@@ -50,58 +52,109 @@ class Database {
     let current = this.database;
     for (let k of keys) {
       if (!current.hasOwnProperty(k)) {
-        break; return undefined;
+        return undefined;
       }
       current = current[k];
     }
     return current;
   };
-
-  getAll() {
-    return JSON.stringify(this.database, null, 2);
-  };
-
+  
   del(key) {
     const keys = key.split(this.options.separator);
     let current = this.database;
     for (let k = 0; k < keys.length - 1; k++) {
       if (!current.hasOwnProperty(keys[k])) {
-        break; return undefined;
+        return undefined;
       }
       current = current[keys[k]];
     }
     delete current[keys[keys.length - 1]];
-    this.#database(this.path);
+    this.#save();
     return text(6);
-  }
+  };
 
-  delAll() {
-    fs.writeFileSync(this.path, '{}'); 
-    return text(7);
-  }
-  
   add(key, value) {
-    const current = this.get(path) || 0;
+    const keys = key.split(this.options.separator);
+    let current = this.database;
+    for (let k of keys) {
+      if (!current.hasOwnProperty(k)) {
+        current[k] = Array.isArray(current[k]) ? current[k] : [];
+      }
+      current = current[k];
+    }
+    current.push(value);
+    this.#save();
+    return current[keys[keys.length - 1]];
+  };
+
+  rem(key, value) {
+    const keys = key.split(this.options.separator);
+    let current = this.database;
+    for (let k of keys) {
+      if (!current.hasOwnProperty(k) || !Array.isArray(current[k])) {
+        return undefined;
+      }
+      current = current[k];
+    }
+    const index = current.indexOf(value);
+    if (index !== -1) {
+      current.splice(index, 1);
+      this.#save();
+      return current;
+    }
+    return undefined;
+  };
+  
+  has(key, value) {
+    const keys = key.split(this.options.separator);
+    let current = this.database;
+    for (let k of keys) {
+      if (!current.hasOwnProperty(k) || !Array.isArray(current[k])) {
+        return false;
+      }
+      current = current[k];
+    }
+    for (let i = 0; i < current.length; i++) {
+      if (current[i] === value) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
+  all() {
+    return JSON.stringify(this.database, null, 2);
+  };
+  
+  clear() {
+    fs.writeFileSync(this.path, '{}');
+    this.#load();
+    return text(7);
+  };
+  
+  sum(key, value) {
+    const current = this.get(key) || 0;
     this.set(key, current + value);
-    return this.get(path);
-  }
+    return current + value;
+  };
   
   sub(key, value) {
-    const current = this.get(path) || 0;
+    const current = this.get(key) || 0;
     this.set(key, current - value);
-    return this.get(path);
-  }
+    return current - value;
+  };
   
   multi(key, value) {
-    const current = this.get(path) || 1;
-    this.set(key, value * current);
-    return this.get(path);
-  }
+    const current = this.get(key) || 1;
+    this.set(key, current * value);
+    return current * value;
+  };
   
   div(key, value) {
-    const current = this.get(path) || 1;
-    this.set(key, value + current);
-    return this.get(path);
-  }
-}
+    const current = this.get(key) || 1;
+    this.set(key, current / value);
+    return current / value;
+  };
+};
+
 module.exports = Database;
